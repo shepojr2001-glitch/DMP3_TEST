@@ -496,8 +496,8 @@ with st.expander("💡 슬기로운 품목분류 생활 (활용 시나리오)", 
         <span style='color:#059669;'>✓ 답변: 6403.99 (가죽 갑피 신발) 34건</span>
       </li>
       <li style='margin-bottom: 10px;'>
-        <b>[해외 사례] </span> "미국에서 footwear with rubber sole and leather upper의 분류 사례를 알려주세요"</b><br>
-        <span style='color:#059669;'>✓ 답변: 미국도 동일하게 6403.99 분류, 48건 사례</span>
+        <b>[해외 사례] </span> "미국과 유럽에서 '무선 네트워크 기기(Bluetooth/Wireless Devices)'의 분류 사례를 알려주세요"</b><br>
+        <span style='color:#059669;'>✓ 답변: 8517.62 (가장 빈번한 HS 코드), 28건 사례</span>
       </li>
       <li>
         <b>[해설서 분석] </span> "고무 밑창 가죽 갑피 신발이 6403.99 가죽신발과 6402.99 고무신발 중 어디에 분류되는지 해설서와 통칙을 근거로 비교 분석해줘"</b><br>
