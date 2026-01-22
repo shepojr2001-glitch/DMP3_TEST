@@ -19,7 +19,7 @@ from .hs_manual_utils import (
 )
 from .search_engines import ParallelHSSearcher
 from .query_expander import QueryExpander
-from .api_retry import retry_on_api_error, retry_api_call
+from .api_retry import retry_on_api_error, retry_api_call, extract_retry_delay_from_error
 
 # API client는 main.py에서 파라미터로 전달받음
 
@@ -150,6 +150,13 @@ def _process_single_group(group_id, group_cases, context_prompt, user_input, ana
                     break
                     
             except Exception as e:
+                # 429 에러인 경우 대기 후 다음 모델로 전환
+                if isinstance(e, APIError) and e.code == 429:
+                    suggested_wait = extract_retry_delay_from_error(e) or 0
+                    # 기본 4초와 API 제안 시간 중 더 긴 시간 대기
+                    wait_time = max(4.0, suggested_wait)
+                    time.sleep(wait_time)
+                
                 # 현재 모델 실패, 에러 기록하고 다음 모델 시도
                 last_error = e
                 # print(f"Group {group_id+1} failed with {model_name}: {str(e)}") # 디버그용
@@ -277,6 +284,15 @@ def _run_head_agent(group_answers, context_prompt, user_input, analysis_type, cl
                 
         except Exception as e:
             last_error = e
+            
+            # 429 에러인 경우 대기 후 다음 모델로 전환
+            if isinstance(e, APIError) and e.code == 429:
+                s_wait = extract_retry_delay_from_error(e) or 0
+                w_time = max(4.0, s_wait)
+                if ui_container:
+                     ui_container.warning(f"⚠️ 모델({model_name}) 사용량 초과. {w_time:.1f}초 대기 후 다음 모델로 전환합니다.")
+                time.sleep(w_time)
+            
             # 현재 모델 실패, 다음 모델 시도
             if ui_container:
                 print(f"Model {model_name} failed: {str(e)}") # 서버 로그용
