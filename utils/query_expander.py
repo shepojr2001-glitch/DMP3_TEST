@@ -10,7 +10,7 @@ import os
 from typing import List, Dict, Set
 from google import genai
 from google.genai.errors import APIError
-from .api_retry import retry_on_api_error
+
 
 
 class QueryExpander:
@@ -171,91 +171,81 @@ class QueryExpander:
                 'expansion_applied': False
             }
 
-        try:
-            # AI 기반 쿼리 확장
-            prompt = self._create_expansion_prompt(user_query)
+        # Fallback 모델 리스트 (우선순위 순)
+        # 1. Primary: Gemini 2.5 Flash Lite (우선 사용 - 고속/경량)
+        # 2. Fallback: Gemini 2.0 Flash (백업)
+        fallback_models = ["gemini-2.5-flash-lite", "gemini-2.0-flash"]
+        
+        last_error = None
+        
+        for model_name in fallback_models:
+            try:
+                # AI 기반 쿼리 확장
+                prompt = self._create_expansion_prompt(user_query)
 
-            # 재시도 로직 적용
-            @retry_on_api_error(max_retries=3, initial_delay=0.5)
-            def _expansion_api_call():
-                return self.client.models.generate_content(
-                    model="gemini-2.0-flash",
+                # 단일 모델 재시도 없이 1회 시도 (Fallback으로 빠른 전환 유도)
+                response = self.client.models.generate_content(
+                    model=model_name,
                     contents=prompt
                 )
 
-            response = _expansion_api_call()
+                # JSON 파싱
+                response_text = response.text.strip()
 
-            # JSON 파싱
-            response_text = response.text.strip()
+                # JSON 블록 추출 (```json ... ``` 형식 처리)
+                if '```json' in response_text:
+                    response_text = response_text.split('```json')[1].split('```')[0].strip()
+                elif '```' in response_text:
+                    response_text = response_text.split('```')[1].split('```')[0].strip()
 
-            # JSON 블록 추출 (```json ... ``` 형식 처리)
-            if '```json' in response_text:
-                response_text = response_text.split('```json')[1].split('```')[0].strip()
-            elif '```' in response_text:
-                response_text = response_text.split('```')[1].split('```')[0].strip()
+                expansion_data = json.loads(response_text)
 
-            expansion_data = json.loads(response_text)
+                # 모든 키워드 수집 (중복 제거) - 새로운 JSON 구조 반영
+                all_keywords = set()
+                all_keywords.update(expansion_data.get('original_keywords', []))
+                all_keywords.update(expansion_data.get('similar_terms_korean', []))
+                all_keywords.update(expansion_data.get('similar_terms_english', []))
+                all_keywords.update(expansion_data.get('material_terms', []))
+                all_keywords.update(expansion_data.get('component_terms', []))
+                all_keywords.update(expansion_data.get('function_terms', []))
 
-            # 모든 키워드 수집 (중복 제거) - 새로운 JSON 구조 반영
-            all_keywords = set()
-            all_keywords.update(expansion_data.get('original_keywords', []))
-            all_keywords.update(expansion_data.get('similar_terms_korean', []))
-            all_keywords.update(expansion_data.get('similar_terms_english', []))
-            all_keywords.update(expansion_data.get('material_terms', []))
-            all_keywords.update(expansion_data.get('component_terms', []))
-            all_keywords.update(expansion_data.get('function_terms', []))
+                # 결과 구성 (성공 시 반환)
+                return {
+                    'original_query': user_query,
+                    'target_product': expansion_data.get('target_product', ''),
+                    'material': expansion_data.get('material', ''),
+                    'components': expansion_data.get('components', ''),
+                    'function': expansion_data.get('function', ''),
+                    'expanded_query': expansion_data.get('expanded_query', user_query),
+                    'keyword_groups': {
+                        'original': expansion_data.get('original_keywords', []),
+                        'similar_korean': expansion_data.get('similar_terms_korean', []),
+                        'similar_english': expansion_data.get('similar_terms_english', []),
+                        'material': expansion_data.get('material_terms', []),
+                        'component': expansion_data.get('component_terms', []),
+                        'function': expansion_data.get('function_terms', [])
+                    },
+                    'all_keywords': list(all_keywords),
+                    'expansion_applied': True
+                }
 
-            # 결과 구성
-            result = {
-                'original_query': user_query,
-                'target_product': expansion_data.get('target_product', ''),
-                'material': expansion_data.get('material', ''),
-                'components': expansion_data.get('components', ''),
-                'function': expansion_data.get('function', ''),
-                'expanded_query': expansion_data.get('expanded_query', user_query),
-                'keyword_groups': {
-                    'original': expansion_data.get('original_keywords', []),
-                    'similar_korean': expansion_data.get('similar_terms_korean', []),
-                    'similar_english': expansion_data.get('similar_terms_english', []),
-                    'material': expansion_data.get('material_terms', []),
-                    'component': expansion_data.get('component_terms', []),
-                    'function': expansion_data.get('function_terms', [])
-                },
-                'all_keywords': list(all_keywords),
-                'expansion_applied': True
-            }
+            except Exception as e:
+                # 현재 모델 실패, 에러 기록하고 다음 모델 시도
+                last_error = e
+                print(f"Query expansion failed with {model_name}: {str(e)}")
+                continue
 
-            return result
-
-        except APIError as e:
-            # API 에러 (재시도 후에도 실패)
-            print(f"Query expansion API error ({e.code}): {e.message}")
-            print("Falling back to original query...")
-
-            return {
-                'original_query': user_query,
-                'target_product': None,
-                'expanded_query': user_query,
-                'keyword_groups': {'original': [user_query]},
-                'all_keywords': [user_query],
-                'expansion_applied': False,
-                'error': f"API Error {e.code}: {e.message}"
-            }
-
-        except Exception as e:
-            # 기타 에러 (JSON 파싱 등)
-            print(f"Query expansion failed: {e}")
-            print("Falling back to original query...")
-
-            return {
-                'original_query': user_query,
-                'target_product': None,
-                'expanded_query': user_query,
-                'keyword_groups': {'original': [user_query]},
-                'all_keywords': [user_query],
-                'expansion_applied': False,
-                'error': str(e)
-            }
+        # 모든 모델 실패 시 최종 Fallback (원본 쿼리 반환)
+        print("All query expansion models failed. Falling back to original query...")
+        return {
+            'original_query': user_query,
+            'target_product': None,
+            'expanded_query': user_query,
+            'keyword_groups': {'original': [user_query]},
+            'all_keywords': [user_query],
+            'expansion_applied': False,
+            'error': str(last_error) if last_error else "Unknown Error"
+        }
 
     def expand_query_simple(self, user_query: str) -> str:
         """

@@ -107,7 +107,7 @@ def truncate_case_text(case, max_chars=1500):
 
 
 def _process_single_group(group_id, group_cases, context_prompt, user_input, analysis_type, client):
-    """단일 그룹 처리 함수 (병렬 실행용, 재시도 로직 포함)"""
+    """단일 그룹 처리 함수 (병렬 실행용, 3단계 Fallback 적용)"""
     try:
         # 텍스트 길이 제한 적용 (토큰 소비 감소)
         truncated_cases = [truncate_case_text(case, max_chars=1500) for case in group_cases]
@@ -123,23 +123,49 @@ def _process_single_group(group_id, group_cases, context_prompt, user_input, ana
 
         start_time = datetime.now()
 
-        # 재시도 로직 적용
-        @retry_on_api_error(max_retries=3, initial_delay=0.5)
-        def _api_call():
-            return client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
+        # Fallback 모델 리스트 (우선순위 순)
+        # 1. Primary: Gemini 2.5 Flash (기본)
+        # 2. Fallback 1: Gemini 2.5 Flash Lite (고속/경량)
+        # 3. Fallback 2: Gemini 2.0 Flash (안정성)
+        fallback_models = [
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash"
+        ]
+        
+        last_error = None
+        answer = None
+        
+        for model_name in fallback_models:
+            try:
+                # 단일 모델 재시도 없이 1회 시도 (Fallback으로 빠른 전환 유도)
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
+                answer = clean_text(response.text)
+                
+                # 성공 시 루프 탈출
+                if answer:
+                    break
+                    
+            except Exception as e:
+                # 현재 모델 실패, 에러 기록하고 다음 모델 시도
+                last_error = e
+                # print(f"Group {group_id+1} failed with {model_name}: {str(e)}") # 디버그용
+                continue
 
-        response = _api_call()
         end_time = datetime.now()
         processing_time = (end_time - start_time).total_seconds()
 
-        answer = clean_text(response.text)
-        return group_id, answer, start_time, processing_time
+        if answer:
+            return group_id, answer, start_time, processing_time
+        else:
+            # 모든 모델 실패
+            raise last_error if last_error else Exception("All models failed")
 
     except APIError as e:
-        # API 에러 (재시도 후에도 실패)
+        # API 에러 (모든 Fallback 실패 후)
         error_msg = f"그룹 {group_id+1} API 오류 ({e.code}): {e.message}"
         return group_id, error_msg, datetime.now(), 0.0
 
@@ -203,42 +229,67 @@ def _run_group_parallel_analysis(groups, context_prompt, user_input, analysis_ty
 
 
 def _run_head_agent(group_answers, context_prompt, user_input, analysis_type, client, ui_container=None):
-    """Head Agent가 5개 답변을 종합하는 함수 (재시도 로직 포함)"""
+    """Head Agent가 5개 답변을 종합하는 함수 (3단계 Fallback 적용)"""
 
     if ui_container:
         ui_container.progress(1.0, text="Head AI 최종 분석 중...")
         ui_container.info("🧠 **Head AI가 모든 분석을 종합하는 중...**")
 
-    try:
-        analysis_label = "국내 HS 분류 사례" if analysis_type == 'domestic' else "해외 HS 분류 사례"
-        head_prompt = f"{context_prompt}\n\n아래는 {analysis_label} 데이터 5개 그룹별 분석 결과입니다. 각 그룹의 답변을 종합하여 최종 전문가 답변을 작성하세요.\n\n"
+    final_answer = ""
+    analysis_label = "국내 HS 분류 사례" if analysis_type == 'domestic' else "해외 HS 분류 사례"
+    head_prompt = f"{context_prompt}\n\n아래는 {analysis_label} 데이터 5개 그룹별 분석 결과입니다. 각 그룹의 답변을 종합하여 최종 전문가 답변을 작성하세요.\n\n"
 
-        for idx, ans in enumerate(group_answers):
-            head_prompt += f"[그룹{idx+1} 답변]\n{ans}\n\n"
-        head_prompt += f"\n사용자: {user_input}\n"
+    for idx, ans in enumerate(group_answers):
+        head_prompt += f"[그룹{idx+1} 답변]\n{ans}\n\n"
+    head_prompt += f"\n사용자: {user_input}\n"
 
-        # 재시도 로직 적용
-        @retry_on_api_error(max_retries=3, initial_delay=0.5)
-        def _head_api_call():
-            return client.models.generate_content(
-                model="gemini-2.5-flash",
+    # Fallback 모델 리스트 (우선순위 순)
+    # 1. Primary: Gemini 3.0 Flash Preview (최신)
+    # 2. Fallback 1: Gemini 2.5 Flash Lite (고속/경량)
+    # 3. Fallback 2: Gemini 2.0 Flash (안정성)
+    fallback_models = [
+        "gemini-3-flash-preview", 
+        "gemini-2.5-flash-lite", 
+        "gemini-2.0-flash"
+    ]
+    
+    last_error = None
+
+    for model_name in fallback_models:
+        try:
+            # 각 모델별 시도 (재시도 데코레이터 없이 1회 시도, 빠른 전환을 위해)
+            # 필요하다면 여기서도 재시도를 넣을 수 있으나, Fallback 전략상 즉시 다음 모델로 넘기는 것이 유리함
+            
+            if ui_container:
+                # 현재 시도 중인 모델 표시 (디버그용 정보)
+                # ui_container.caption(f"Trying model: {model_name}...") 
+                pass
+
+            head_response = client.models.generate_content(
+                model=model_name,
                 contents=head_prompt
             )
+            final_answer = clean_text(head_response.text)
+            
+            # 성공 시 루프 탈출
+            if final_answer:
+                break
+                
+        except Exception as e:
+            last_error = e
+            # 현재 모델 실패, 다음 모델 시도
+            if ui_container:
+                print(f"Model {model_name} failed: {str(e)}") # 서버 로그용
+            continue
 
-        head_response = _head_api_call()
-        final_answer = clean_text(head_response.text)
-
-    except APIError as e:
-        final_answer = f"Head AI API 오류 ({e.code}): {e.message}\n\n그룹별 분석 결과를 참고해주세요."
+    # 모든 모델 실패 시 처리
+    if not final_answer:
+        error_msg = str(last_error) if last_error else "Unknown Error"
+        final_answer = f"Head AI 분석 중 오류가 발생했습니다 (All models failed). 마지막 오류: {error_msg}\n\n그룹별 분석 결과를 참고해주세요."
         if ui_container:
-            ui_container.error(f"⚠️ Head AI API 오류 ({e.code}): {e.message}")
+            ui_container.error(f"⚠️ Head AI 오류: 모든 모델 시도 실패. ({error_msg})")
 
-    except Exception as e:
-        final_answer = f"Head AI 분석 중 오류가 발생했습니다: {str(e)}\n\n그룹별 분석 결과를 참고해주세요."
-        if ui_container:
-            ui_container.error(f"⚠️ Head AI 오류: {str(e)}")
-
-    if ui_container:
+    if ui_container and final_answer and not final_answer.startswith("Head AI 분석 중 오류"):
         ui_container.progress(1.0, text="분석 완료!")
         ui_container.success("✅ **모든 AI 분석이 완료되었습니다**")
         ui_container.info("📋 **패널을 접고 아래에서 최종 답변을 확인하세요**")
