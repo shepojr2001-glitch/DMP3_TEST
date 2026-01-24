@@ -419,7 +419,7 @@ with st.sidebar:
     ### 📚 보유 데이터
 
     **국내 분류사례**
-    - 관세청 분류사례: 899건 (10개 파일로 분할)
+    - 관세청 분류사례: 899건
     - HS 위원회 결정: 76건
     - HS 협의회 결정: 12건
     - **총 987건**
@@ -443,23 +443,22 @@ with st.sidebar:
 
     **TF-IDF Character n-gram**
     - 복합어 정확 검색 (예: "폴리우레탄폼" 띄어쓰기 없이 인식)
-    - 문서별 단어 중요도 계산
-      - TF: 문서 내 반복 빈도 (예: "리튬"이 10번 등장 → 중요)
-      - IDF: 희소성 가중치 (예: "제품"은 모든 문서에 등장 → 덜 중요)
+    - 문서별 단어 중요도 자동 계산
 
     **Multi-Agent 시스템**
-    - 전체 데이터(~900건)에서 TF-IDF로 상위 100개 사례 추출
-    - 5그룹(각 20개 사례)으로 분할 후 병렬 분석
-    - Head Agent가 5개 분석 결과 종합
+    - Head Agent: **Gemini 3.0 Flash Preview** (종합 분석)
+    - Group Agent: **Gemini 2.5 Flash** (병렬 분석)
+    - Query Expander: **Gemini 2.5 Flash Lite** (신속 확장)
 
-    **Gemini AI 2.5 Flash**
-    - Google 최신 LLM 모델
-    - 빠른 응답 + 높은 정확도
+    **3-Tier Fallback System**
+    - 장애 발생 시 자동 모델 전환
+    - 3.0 Flash → 2.5 Flash → 2.0 Flash
 
     ---
 
     ### ⚡ 성능 특징
 
+    - **스마트 재시도 (Smart Retry)**
     - 캐싱으로 데이터 로딩 최적화
     - 실시간 처리 과정 투명 공개
     - AI 분석 결과 세션 저장
@@ -488,20 +487,20 @@ with st.expander("💡 슬기로운 품목분류 생활 (활용 시나리오)", 
     st.markdown("""
     <ol style='padding-left: 18px;'>
       <li style='margin-bottom: 10px;'>
-        <b>[웹 검색] </span> "고무 밑창과 가죽 갑피로 만든 등산화의 재질 구성과 주요 용도는?"</b><br>
-        <span style='color:#059669;'>✓ 답변: 고무제 바닥창, 천연가죽 갑피, 신발류 확인</span>
+        <b>[웹 검색] </span> "자동차에 사용되는 플라스틱 범퍼의 재질 구성과 주요 용도는?"</b><br>
+        <span style='color:#059669;'>✓ 답변: 폴리프로필렌(PP) 복합소재, 충격 흡수 및 디자인 용도 확인</span>
       </li>
       <li style='margin-bottom: 10px;'>
-        <b>[국내 사례] </span> "고무 밑창과 가죽 갑피로 만든 신발(footwear)은 어떤 HS코드로 분류되나요?"</b><br>
-        <span style='color:#059669;'>✓ 답변: 6403.99 (가죽 갑피 신발) 34건</span>
+        <b>[국내 사례] </span> "자동차 플라스틱 범퍼(bumper)는 8708 부품과 3926 플라스틱 제품 중 어디로 분류되나요?"</b><br>
+        <span style='color:#059669;'>✓ 답변: 8708.10 (범퍼) 관련 사례 25건</span>
       </li>
       <li style='margin-bottom: 10px;'>
         <b>[해외 사례] </span> "미국과 유럽에서 '무선 네트워크 기기(Bluetooth/Wireless Devices)'의 분류 사례를 알려주세요"</b><br>
         <span style='color:#059669;'>✓ 답변: 8517.62 (가장 빈번한 HS 코드), 28건 사례</span>
       </li>
       <li>
-        <b>[해설서 분석] </span> "고무 밑창 가죽 갑피 신발이 6403.99 가죽신발과 6402.99 고무신발 중 어디에 분류되는지 해설서와 통칙을 근거로 비교 분석해줘"</b><br>
-        <span style='color:#059669;'>✓ 결론: 6403.99 (통칙 1, 갑피 재질 우선)</span>
+        <b>[해설서 분석] </span> "자동차 범퍼가 8708.10과 3926.90 중 어디에 분류되는지 해설서와 통칙을 근거로 비교 분석해줘"</b><br>
+        <span style='color:#059669;'>✓ 결론: 8708.10 (통칙 1, 전용 부품 우선)</span>
       </li>
     </ol>
     """, unsafe_allow_html=True)
