@@ -491,7 +491,7 @@ with st.expander("💡 슬기로운 품목분류 생활 (활용 시나리오)", 
         <span style='color:#059669;'>✓ 답변: 폴리프로필렌(PP) 복합소재, 충격 흡수 및 디자인 용도 확인</span>
       </li>
       <li style='margin-bottom: 10px;'>
-        <b>[국내 사례] </span> "자동차 플라스틱 범퍼(bumper)는 8708 부품과 3926 플라스틱 제품 중 어디로 분류되나요?"</b><br>
+        <b>[국내 사례] </span> "자동차 플라스틱 범퍼(bumper)는 어디로 분류되나요?"</b><br>
         <span style='color:#059669;'>✓ 답변: 8708.10 (범퍼) 관련 사례 25건</span>
       </li>
       <li style='margin-bottom: 10px;'>
