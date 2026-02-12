@@ -97,14 +97,14 @@ streamlit run main.py
 
 ```mermaid
 flowchart TD
-    A["🧑 사용자 질문 입력"] --> B{"질문 유형 선택\n(config.py)"}
-    B -->|웹 검색| C["Google Search API\n(handlers.py)"]
+    A["🧑 사용자 질문 입력"] --> B{"질문 유형 선택<br>(config.py)"}
+    B -->|웹 검색| C["Google Search API<br>(handlers.py)"]
     B -->|국내 HS 추천| D["Multi-Agent 파이프라인"]
     B -->|해외 HS 추천| D
-    B -->|국내 원문 검색| E["키워드 직접 매칭\n(keyword_searcher.py)"]
+    B -->|국내 원문 검색| E["키워드 직접 매칭<br>(keyword_searcher.py)"]
     B -->|해외 원문 검색| E
-    B -->|HS 해설서 분석| F["해설서 비교 분석\n(hs_manual_utils.py)"]
-    B -->|HS 해설서 원문| G["해설서 원문 조회\n(hs_manual_utils.py)"]
+    B -->|HS 해설서 분석| F["해설서 비교 분석<br>(hs_manual_utils.py)"]
+    B -->|HS 해설서 원문| G["해설서 원문 조회<br>(hs_manual_utils.py)"]
     D --> H["🤖 최종 답변"]
     C --> H
     E --> H
@@ -133,16 +133,16 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["사용자 질문"] --> B["① AI 쿼리 확장\n(query_expander.py)"]
-    B --> |"용어사전 1,149개 참조\n유사어·영문·관련 용어 자동 추가"| C["② TF-IDF 검색\n(tfidf_case_searcher.py)"]
-    C --> |"상위 100건 추출\nCharacter n-gram 2~4글자"| D["③ 5개 그룹 분할\n(handlers.py)"]
-    D --> E1["Group 1 AI\n20건 분석"]
-    D --> E2["Group 2 AI\n20건 분석"]
-    D --> E3["Group 3~5 AI\n각 20건 분석"]
-    E1 --> F["④ Head AI 종합\n(handlers.py)"]
+    A["사용자 질문"] --> B["① AI 쿼리 확장<br>(query_expander.py)"]
+    B --> |"용어사전 1,149개 참조<br>유사어·영문·관련 용어 자동 추가"| C["② TF-IDF 검색<br>(tfidf_case_searcher.py)"]
+    C --> |"상위 100건 추출<br>Character n-gram 2~4글자"| D["③ 5개 그룹 분할<br>(handlers.py)"]
+    D --> E1["Group 1 AI<br>20건 분석"]
+    D --> E2["Group 2 AI<br>20건 분석"]
+    D --> E3["Group 3~5 AI<br>각 20건 분석"]
+    E1 --> F["④ Head AI 종합<br>(handlers.py)"]
     E2 --> F
     E3 --> F
-    F --> |"5개 분석 결과 교차 검증\n빈도수 기반 최종 HS코드 선정"| G["최종 답변"]
+    F --> |"5개 분석 결과 교차 검증<br>빈도수 기반 최종 HS코드 선정"| G["최종 답변"]
 
     style B fill:#e8f5e9
     style C fill:#e3f2fd
@@ -218,11 +218,11 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["사용자 질문\n(HS코드 포함 필수)"] --> B["① HS 코드 추출\n(text_utils.py)"]
-    B --> C["② 관세율표 정보 수집\n(hs_manual_utils.py)"]
-    C --> D["③ 해설서 정보 수집 및 요약\n(hs_manual_utils.py)"]
-    D --> E["④ HS 통칙 9개 조항 준비\n(hs_manual_utils.py)"]
-    E --> F["⑤ AI 비교 분석\n(hs_manual_utils.py)"]
+    A["사용자 질문<br>(HS코드 포함 필수)"] --> B["① HS 코드 추출<br>(text_utils.py)"]
+    B --> C["② 관세율표 정보 수집<br>(hs_manual_utils.py)"]
+    C --> D["③ 해설서 정보 수집 및 요약<br>(hs_manual_utils.py)"]
+    D --> E["④ HS 통칙 9개 조항 준비<br>(hs_manual_utils.py)"]
+    E --> F["⑤ AI 비교 분석<br>(hs_manual_utils.py)"]
     F --> G["최종 비교 분석 답변"]
 
     style F fill:#fff3e0
@@ -260,35 +260,35 @@ flowchart TD
 ```mermaid
 flowchart TB
     subgraph presentation ["🖥️ Presentation Layer"]
-        main["main.py\nStreamlit UI · CSS · 세션 관리"]
+        main["main.py<br>Streamlit UI · CSS · 세션 관리"]
     end
 
     subgraph config ["⚙️ Config Layer"]
-        cfg["config.py\n카테고리 매핑 · 예시 질문"]
-        prm["prompts.py\nAI 시스템 프롬프트"]
+        cfg["config.py<br>카테고리 매핑 · 예시 질문"]
+        prm["prompts.py<br>AI 시스템 프롬프트"]
     end
 
     subgraph logic ["🧠 Logic Layer"]
-        handler["handlers.py\n7가지 유형별 핸들러 · Multi-Agent 로직"]
+        handler["handlers.py<br>7가지 유형별 핸들러 · Multi-Agent 로직"]
     end
 
     subgraph search ["🔍 Search Layer"]
-        qe["query_expander.py\nAI 쿼리 확장"]
-        tcs["tfidf_case_searcher.py\nTF-IDF 사례 검색"]
-        ks["keyword_searcher.py\n키워드 직접 검색"]
-        se["search_engines.py\n관세율표 + 해설서 병렬 검색"]
+        qe["query_expander.py<br>AI 쿼리 확장"]
+        tcs["tfidf_case_searcher.py<br>TF-IDF 사례 검색"]
+        ks["keyword_searcher.py<br>키워드 직접 검색"]
+        se["search_engines.py<br>관세율표 + 해설서 병렬 검색"]
     end
 
     subgraph core ["⚙️ Core Layer"]
-        ts["tfidf_search.py\nTF-IDF 엔진"]
-        hmu["hs_manual_utils.py\n해설서 유틸리티"]
-        tu["text_utils.py\n텍스트 처리"]
-        ar["api_retry.py\nAPI 재시도 · Fallback"]
+        ts["tfidf_search.py<br>TF-IDF 엔진"]
+        hmu["hs_manual_utils.py<br>해설서 유틸리티"]
+        tu["text_utils.py<br>텍스트 처리"]
+        ar["api_retry.py<br>API 재시도 · Fallback"]
     end
 
     subgraph data ["💾 Data Layer"]
-        dl["data_loader.py\nJSON 데이터 로딩"]
-        kn["knowledge/\nJSON 데이터 파일"]
+        dl["data_loader.py<br>JSON 데이터 로딩"]
+        kn["knowledge/<br>JSON 데이터 파일"]
     end
 
     main --> cfg & prm
@@ -357,10 +357,10 @@ kcs_hs_chatbot/
 
 ```mermaid
 flowchart LR
-    A["main.py\nHSDataManager()"] --> B["__init__.py\nFacade 클래스"]
-    B --> C["data_loader.py\n데이터 로딩"]
-    B --> D["tfidf_case_searcher.py\nTF-IDF 검색"]
-    B --> E["keyword_searcher.py\n키워드 검색"]
+    A["main.py<br>HSDataManager()"] --> B["__init__.py<br>Facade 클래스"]
+    B --> C["data_loader.py<br>데이터 로딩"]
+    B --> D["tfidf_case_searcher.py<br>TF-IDF 검색"]
+    B --> E["keyword_searcher.py<br>키워드 검색"]
 ```
 
 ---
