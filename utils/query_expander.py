@@ -173,8 +173,8 @@ class QueryExpander:
 
         # Fallback 모델 리스트 (우선순위 순)
         # 1. Primary: Gemini 2.5 Flash Lite (우선 사용 - 고속/경량)
-        # 2. Fallback: Gemini 2.0 Flash (백업)
-        fallback_models = ["gemini-2.5-flash-lite", "gemini-2.0-flash"]
+        # 2. Fallback: Gemini 2.5 Flash (백업)
+        fallback_models = ["gemini-2.5-flash-lite", "gemini-2.5-flash"]
         
         last_error = None
         

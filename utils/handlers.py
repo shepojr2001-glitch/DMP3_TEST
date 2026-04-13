@@ -125,12 +125,10 @@ def _process_single_group(group_id, group_cases, context_prompt, user_input, ana
 
         # Fallback 모델 리스트 (우선순위 순)
         # 1. Primary: Gemini 2.5 Flash (기본)
-        # 2. Fallback 1: Gemini 2.5 Flash Lite (고속/경량)
-        # 3. Fallback 2: Gemini 2.0 Flash (안정성)
+        # 2. Fallback: Gemini 2.5 Flash Lite (고속/경량)
         fallback_models = [
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
-            "gemini-2.0-flash"
         ]
         
         last_error = None
@@ -252,12 +250,10 @@ def _run_head_agent(group_answers, context_prompt, user_input, analysis_type, cl
 
     # Fallback 모델 리스트 (우선순위 순)
     # 1. Primary: Gemini 3.0 Flash Preview (최신)
-    # 2. Fallback 1: Gemini 2.5 Flash Lite (고속/경량)
-    # 3. Fallback 2: Gemini 2.0 Flash (안정성)
+    # 2. Fallback: Gemini 2.5 Flash Lite (고속/경량)
     fallback_models = [
-        "gemini-3-flash-preview", 
-        "gemini-2.5-flash-lite", 
-        "gemini-2.0-flash"
+        "gemini-3-flash-preview",
+        "gemini-2.5-flash-lite",
     ]
     
     last_error = None
@@ -432,7 +428,7 @@ def handle_web_search(user_input, context, hs_manager, client):
     @retry_on_api_error(max_retries=3, initial_delay=0.5)
     def _web_search_api_call():
         return client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash-lite",
             contents=prompt,
             config=config
         )

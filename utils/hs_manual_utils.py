@@ -128,7 +128,7 @@ HS코드: {code}
                     @retry_on_api_error(max_retries=3, initial_delay=0.5)
                     def _summary_api_call():
                         return client.models.generate_content(
-                            model="gemini-2.0-flash",
+                            model="gemini-2.5-flash-lite",
                             contents=summary_prompt
                         )
 

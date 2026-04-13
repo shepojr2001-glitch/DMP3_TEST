@@ -21,7 +21,7 @@ def classify_question(user_input, client):
 질문: """ + user_input + """\n답변:"""
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash", # 또는 최신 모델로 변경 가능
+        model="gemini-2.5-flash-lite", # 또는 최신 모델로 변경 가능
         contents=system_prompt,
         )
     answer = response.text.strip().lower()
