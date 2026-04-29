@@ -502,7 +502,8 @@ API 장애 시 자동으로 더 안정적인 모델로 전환합니다.
 
 ## 📄 라이선스 / 개발자 정보
 
-**MIT License** — 자유롭게 사용, 수정, 배포 가능 (원저작자 표시 필수)
 
-- **개발자**: Yeonsoo CHOI
+**MIT License** — 자유롭게 사용, 수정, 배포 가능 (원저작자 표시 필수)
+- **원저작자**: Yeonsoo CHOI
+- **개발자** : JongBeom KIM, Geonwoo KANG, Sanghyeon JU
 - **GitHub**: [YSCHOI-github/kcs_hs_chatbot](https://github.com/YSCHOI-github/kcs_hs_chatbot)
