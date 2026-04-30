@@ -16,13 +16,13 @@ from config import CATEGORY_MAPPING, LOGGER_ICONS, EXAMPLE_QUESTIONS
 #load_dotenv()
 
 # 4.30 streamlit cloud 에 적용하기 위해 임시키값 지정
-st.secrets['api']['GOOGLE_API_KEY']
+
 
 # Gemini API 설정
 # GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 # client = genai.Client(api_key=GOOGLE_API_KEY)
 # GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-
+GOOGLE_API_KEY=st.secrets['api']['GOOGLE_API_KEY']
 client = genai.Client(api_key=st.secrets['api']['GOOGLE_API_KEY'])
 
 

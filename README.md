@@ -69,7 +69,11 @@ cd kcs_hs_chatbot
 pip install -r requirements.txt
 
 # 3. API 키 설정 (.env 파일 생성)
-echo GOOGLE_API_KEY=여기에_발급받은_키_입력 > .env
+1. 프로젝트 최상단에 .streamlit 폴더 생성
+2. .streamlit 폴더 내 secrets.toml 파일 생성
+3. 파일 내 다음 구조로 저장
+[api]
+GOOGLE_API_KEY="구글API 키"
 
 # 4. 실행
 streamlit run main.py
