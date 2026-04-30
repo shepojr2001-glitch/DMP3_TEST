@@ -13,11 +13,18 @@ from prompts import SYSTEM_PROMPT
 from config import CATEGORY_MAPPING, LOGGER_ICONS, EXAMPLE_QUESTIONS
 
 # 환경 변수 로드 (.env 파일에서 API 키 등 설정값 로드)
-load_dotenv()
+#load_dotenv()
+
+# 4.30 streamlit cloud 에 적용하기 위해 임시키값 지정
+st.secrets['api']['GOOGLE_API_KEY']
 
 # Gemini API 설정
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-client = genai.Client(api_key=GOOGLE_API_KEY)
+# GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+# client = genai.Client(api_key=GOOGLE_API_KEY)
+# GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
+client = genai.Client(api_key=st.secrets['api']['GOOGLE_API_KEY'])
+
 
 # Streamlit 페이지 설정
 st.set_page_config(
