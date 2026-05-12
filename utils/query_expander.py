@@ -134,7 +134,7 @@ class QueryExpander:
 사용자: {user_query}
 
 출력 (JSON만):"""
-
+        
         return prompt
 
     def expand_query(self, user_query: str) -> Dict:
@@ -188,7 +188,7 @@ class QueryExpander:
                     model=model_name,
                     contents=prompt
                 )
-
+                
                 # JSON 파싱
                 response_text = response.text.strip()
 
