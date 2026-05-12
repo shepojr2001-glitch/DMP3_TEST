@@ -131,7 +131,7 @@ HS코드: {code}
                             model="gemini-2.5-flash-lite",
                             contents=summary_prompt
                         )
-
+                    
                     summary_response = _summary_api_call()
                     manual_info[code] = {
                         'content': clean_text(summary_response.text),
@@ -264,7 +264,7 @@ def analyze_user_provided_codes(user_input, hs_codes, tariff_info, manual_info, 
                 model="gemini-2.5-flash",
                 contents=analysis_prompt
             )
-
+        print(analysis_prompt)
         response = _analysis_api_call()
         return clean_text(response.text)
 

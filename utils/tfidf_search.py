@@ -64,7 +64,7 @@ class TfidfSearchEngine:
         """
         if self.tfidf_matrix is None:
             raise ValueError("fit() 메서드를 먼저 호출해야 합니다.")
-
+        
         query_vec = self.vectorizer.transform([query])
         similarities = cosine_similarity(query_vec, self.tfidf_matrix)[0]
 

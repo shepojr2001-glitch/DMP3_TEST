@@ -214,6 +214,7 @@ def _run_group_parallel_analysis(groups, context_prompt, user_input, analysis_ty
                     'start_time': start_time.strftime('%H:%M:%S'),
                     'processing_time': processing_time
                 }
+                
                 st.session_state.ai_analysis_results.append(analysis_result)
 
                 # 실시간 UI 업데이트
@@ -273,13 +274,13 @@ def _run_head_agent(group_answers, context_prompt, user_input, analysis_type, cl
                 contents=head_prompt
             )
             final_answer = clean_text(head_response.text)
-            
+            print(head_prompt)
             # 성공 시 루프 탈출
             if final_answer:
                 break
                 
-        except Exception as e:
             last_error = e
+        except Exception as e:
             
             # 429 에러인 경우 대기 후 다음 모델로 전환
             if isinstance(e, APIError) and e.code == 429:
@@ -394,7 +395,7 @@ def handle_multi_agent_analysis(user_input, context, hs_manager, analysis_type, 
 
     # Head Agent 최종 종합
     final_answer = _run_head_agent(group_answers, context_prompt, user_input, analysis_type, client, ui_container)
-
+    
     return final_answer
 
 
@@ -423,7 +424,7 @@ def handle_web_search(user_input, context, hs_manager, client):
     config = types.GenerateContentConfig(tools=[grounding_tool])
 
     prompt = f"{web_context}\n\n사용자: {user_input}\n"
-
+    print(prompt)
     # 재시도 로직 적용
     @retry_on_api_error(max_retries=3, initial_delay=0.5)
     def _web_search_api_call():
