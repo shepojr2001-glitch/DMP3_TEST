@@ -334,11 +334,11 @@ class RealTimeProcessLogger:
 def check_api_key(key):    
     try:        
         # API 키 검증용: 실제 호출 또는 모델 목록 조회
-        print("1")
+        # print("1")
         client= genai.Client(api_key=key)
-        print("2")
+        # print("2")
         client.models.list()  # 모델 목록 조회로 키 유효성 확인
-        print("3") 
+        # print("3") 
                
         return True
     except Exception as e:
@@ -471,7 +471,7 @@ def setLoginPage():
                 st.session_state.user_id = user_id
                 st.session_state.api_key = pw_api_key
                 st.session_state.client = genai.Client(api_key=pw_api_key)
-                print(pw_api_key)
+                #print(pw_api_key)
                 st.rerun()
             else:
                 st.toast("유효하지 않은 값입니다.", icon="❌")
@@ -811,8 +811,8 @@ def setMainPage():
                     st.session_state.chat_history.append({"role": "user", "content": user_input})
                     st.session_state.chat_history.append({"role": "assistant", "content": answer})
                     # st.session_state.context += f"\n사용자: {user_input}\n품목분류 전문가: {answer}\n"
-                    # 채팅 기록 백업 저장
                     
+                    # 채팅 기록 백업 저장                    
                     save_chat_archive(user_input, answer)  
 
                     # 분석 과정이 표시된 유형들의 최종 답변 표시 (마크다운으로 렌더링)
@@ -858,7 +858,7 @@ def setMainPage():
                 # 최근 채팅 기록에서 질문 버튼을 클릭한 경우 해당 질문과 답변을 표시
                 
                 selected_item = st.session_state.selected_archive
-                print(selected_item)
+                #print(selected_item)
                 st.markdown("**품목분류 전문가:**")                
                 st.markdown(selected_item['answer'], unsafe_allow_html=True)
                 
