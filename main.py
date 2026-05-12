@@ -479,26 +479,16 @@ def setLoginPage():
                 
 # 사이드바 설정 - 챗봇 특성 소개(중복되는 부분으로 함수로 분리)                
 def setSideBar():
+    expanded = True
     with st.sidebar:
         st.title("📊 HS 품목분류 전문 AI")
         
-        if st.session_state.login:
-            # 새로운 채팅 시작 버튼
-            if st.button("+ 채팅 초기화", type="primary",use_container_width=True):
-                st.session_state.chat_history = []  # 채팅 기록 초기화                
-                # Multi-Agent 및 HS 해설서 분석 결과도 초기화
-                if 'ai_analysis_results' in st.session_state:
-                    st.session_state.ai_analysis_results = []
-                if 'hs_manual_analysis_results' in st.session_state:
-                    st.session_state.hs_manual_analysis_results = []
-                # 컨텍스트 초기화 (기본 컨텍스트 재사용)
-                st.session_state.context = SYSTEM_PROMPT                
-                st.toast("✅ 채팅기록이 초기화 되었습니다!")   
-
+        if st.session_state.login: 
+            expanded = False
             # 로그인한 유저 정보                
             st.markdown(f"👤 {st.session_state.user_id}")
-                      
-            if st.button("로그아웃", type="secondary", use_container_width=True):
+            # 로그아웃 버튼                       
+            if st.button("로그아웃", type="primary", use_container_width=True):
                 st.session_state.login = False
                 st.session_state.user_id = ""
                 st.session_state.api_key = ""
@@ -511,9 +501,22 @@ def setSideBar():
                 if 'hs_manual_analysis_results' in st.session_state:
                     st.session_state.hs_manual_analysis_results = []
                 st.rerun()
-                    
                 
-        with st.expander("📌 챗봇 특성 소개", expanded=False):   
+            # 채팅 초기화 버튼 - 로그인한 경우에만 표시
+            if st.button("+ 채팅 초기화", type="secondary",use_container_width=True):
+                st.session_state.chat_history = []  # 채팅 기록 초기화                
+                # Multi-Agent 및 HS 해설서 분석 결과도 초기화
+                if 'ai_analysis_results' in st.session_state:
+                    st.session_state.ai_analysis_results = []
+                if 'hs_manual_analysis_results' in st.session_state:
+                    st.session_state.hs_manual_analysis_results = []
+                # 컨텍스트 초기화 (기본 컨텍스트 재사용)
+                st.session_state.context = SYSTEM_PROMPT                
+                st.toast("✅ 채팅기록이 초기화 되었습니다!")   
+                                   
+            # 채팅 최근 기록                
+            setSideBar_ChatHistory()      
+        with st.expander("📌 챗봇 특성 소개", expanded=expanded):   
 
             st.markdown("""
             ### 📚 보유 데이터
@@ -564,7 +567,7 @@ def setSideBar():
             - AI 분석 결과 세션 저장
             - 대화 컨텍스트 누적 관리
             """)
-        setSideBar_ChatHistory()           
+                 
             
             
         
