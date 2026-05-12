@@ -274,7 +274,7 @@ def _run_head_agent(group_answers, context_prompt, user_input, analysis_type, cl
                 contents=head_prompt
             )
             final_answer = clean_text(head_response.text)
-            print(head_prompt)
+            
             # 성공 시 루프 탈출
             if final_answer:
                 break

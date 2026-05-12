@@ -334,11 +334,11 @@ class RealTimeProcessLogger:
 def check_api_key(key):    
     try:        
         # API 키 검증용: 실제 호출 또는 모델 목록 조회
-        print("1")
+        # print("1")
         client= genai.Client(api_key=key)
-        print("2")
+        # print("2")
         client.models.list()  # 모델 목록 조회로 키 유효성 확인
-        print("3") 
+        # print("3") 
                
         return True
     except Exception as e:
@@ -471,7 +471,7 @@ def setLoginPage():
                 st.session_state.user_id = user_id
                 st.session_state.api_key = pw_api_key
                 st.session_state.client = genai.Client(api_key=pw_api_key)
-                print(pw_api_key)
+                #print(pw_api_key)
                 st.rerun()
             else:
                 st.toast("유효하지 않은 값입니다.", icon="❌")
@@ -479,26 +479,16 @@ def setLoginPage():
                 
 # 사이드바 설정 - 챗봇 특성 소개(중복되는 부분으로 함수로 분리)                
 def setSideBar():
+    expanded = True
     with st.sidebar:
         st.title("📊 HS 품목분류 전문 AI")
         
-        if st.session_state.login:
-            # 새로운 채팅 시작 버튼
-            if st.button("+ 채팅 초기화", type="primary",use_container_width=True):
-                st.session_state.chat_history = []  # 채팅 기록 초기화                
-                # Multi-Agent 및 HS 해설서 분석 결과도 초기화
-                if 'ai_analysis_results' in st.session_state:
-                    st.session_state.ai_analysis_results = []
-                if 'hs_manual_analysis_results' in st.session_state:
-                    st.session_state.hs_manual_analysis_results = []
-                # 컨텍스트 초기화 (기본 컨텍스트 재사용)
-                st.session_state.context = SYSTEM_PROMPT                
-                st.toast("✅ 채팅기록이 초기화 되었습니다!")   
-
+        if st.session_state.login: 
+            expanded = False
             # 로그인한 유저 정보                
             st.markdown(f"👤 {st.session_state.user_id}")
-                      
-            if st.button("로그아웃", type="secondary", use_container_width=True):
+            # 로그아웃 버튼                       
+            if st.button("로그아웃", type="primary", use_container_width=True):
                 st.session_state.login = False
                 st.session_state.user_id = ""
                 st.session_state.api_key = ""
@@ -511,9 +501,22 @@ def setSideBar():
                 if 'hs_manual_analysis_results' in st.session_state:
                     st.session_state.hs_manual_analysis_results = []
                 st.rerun()
-                    
                 
-        with st.expander("📌 챗봇 특성 소개", expanded=False):   
+            # 채팅 초기화 버튼 - 로그인한 경우에만 표시
+            if st.button("+ 채팅 초기화", type="secondary",use_container_width=True):
+                st.session_state.chat_history = []  # 채팅 기록 초기화                
+                # Multi-Agent 및 HS 해설서 분석 결과도 초기화
+                if 'ai_analysis_results' in st.session_state:
+                    st.session_state.ai_analysis_results = []
+                if 'hs_manual_analysis_results' in st.session_state:
+                    st.session_state.hs_manual_analysis_results = []
+                # 컨텍스트 초기화 (기본 컨텍스트 재사용)
+                st.session_state.context = SYSTEM_PROMPT                
+                st.toast("✅ 채팅기록이 초기화 되었습니다!")   
+                                   
+            # 채팅 최근 기록                
+            setSideBar_ChatHistory()      
+        with st.expander("📌 챗봇 특성 소개", expanded=expanded):   
 
             st.markdown("""
             ### 📚 보유 데이터
@@ -564,7 +567,7 @@ def setSideBar():
             - AI 분석 결과 세션 저장
             - 대화 컨텍스트 누적 관리
             """)
-        setSideBar_ChatHistory()           
+                 
             
             
         
@@ -808,8 +811,8 @@ def setMainPage():
                     st.session_state.chat_history.append({"role": "user", "content": user_input})
                     st.session_state.chat_history.append({"role": "assistant", "content": answer})
                     # st.session_state.context += f"\n사용자: {user_input}\n품목분류 전문가: {answer}\n"
-                    # 채팅 기록 백업 저장
                     
+                    # 채팅 기록 백업 저장                    
                     save_chat_archive(user_input, answer)  
 
                     # 분석 과정이 표시된 유형들의 최종 답변 표시 (마크다운으로 렌더링)
@@ -855,7 +858,7 @@ def setMainPage():
                 # 최근 채팅 기록에서 질문 버튼을 클릭한 경우 해당 질문과 답변을 표시
                 
                 selected_item = st.session_state.selected_archive
-                print(selected_item)
+                #print(selected_item)
                 st.markdown("**품목분류 전문가:**")                
                 st.markdown(selected_item['answer'], unsafe_allow_html=True)
                 
