@@ -164,6 +164,17 @@ details[open] .arrow {
     white-space: nowrap;
 }
 
+/* 점수_가중치 */
+.weight-val {
+    background-color: #ecae53;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 /* 품목명/요약 미리보기 */
 .product-name, .reply-preview {
     flex: 1;
@@ -648,6 +659,20 @@ def setMainPage():
     # 특수 케이스 주의사항 표시
     if selected_category == "HS해설서 분석(품명 + 후보 HS코드)":
         st.warning("주의: 반드시 비교할 HS코드를 질문에 포함해야 합니다.")
+    elif selected_category in ["국내 분류사례 원문 검색", "국내 분류사례 원문 검색"]:
+        st.warning("""
+가중치 점수는 질문을 토큰화한 후, 각 토큰이 품목명·품목 설명·품목 근거에 포함된 횟수와 
+항목별 가중치를 합산하여 계산됩니다.
+
+품목명 : 5점, 품목 설명 : 3점, 품목 근거 : 2점
+
+예) 질문 : 반도체 에칭 장비
+- 반도체 : 설명 1번, 근거 1번 → 3점 + 2점 = 5점
+- 에칭 : 설명 1번 → 3점
+- 장비 : 설명 1번, 근거 1번 → 3점 + 2점 = 5점
+
+⇒ 최종 점수 : 13점
+        """)
 
     st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)  # 간격 축소
 

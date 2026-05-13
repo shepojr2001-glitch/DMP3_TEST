@@ -529,11 +529,19 @@ def handle_domestic_case_lookup(user_input, hs_manager):
         else:
             return f"⚠️ 참고문서번호 '{ref_id}'에 해당하는 사례를 찾을 수 없습니다.\n\n다른 문서번호나 키워드로 다시 검색해주세요."
 
-    # 2. 키워드 기반 단순 문자열 검색
-    results = hs_manager.search_domestic_by_keyword(user_input, top_k=10)
+    # expander = QueryExpander(client, 'balanced')
+    # expansion_result = expander.expand_query(user_input)
+    dict_word=[]
+    print(dict_word)
+    # 1. 단순 키워드 검색으로 한다. 여기서 있으면 그냥 리턴
+    results = hs_manager.search_domestic_by_keyword(user_input,dict_word=dict_word, top_k=10)
+    
+        # 2. 키워드 기반 단순 문자열 검색
+        # results = hs_manager.search_domestic_by_keyword(user_input, expansion_result["all_keywords"], top_k=10)
 
     if not results:
         return f"""⚠️ **"{user_input}"에 대한 검색 결과가 없습니다**
+
 
 **가능한 원인:**
 - 해당 키워드가 포함된 분류사례가 데이터에 없습니다
@@ -593,17 +601,23 @@ def format_domestic_case_detail(case, query=None):
 </div>
 """
 
+"""
+    2026.05.13 추가
+     - SCORE (가중치 점수) 추가
+     - SCORE, 결정일자 순으로 정렬함.
+"""
 
 def format_domestic_case_list(results, query):
     """국내 사례 목록 포맷 (Expander 방식)"""
     output = f"## 🔍 \"{query}\" 검색 결과 ({len(results)}건)\n\n"
-
-    for idx, case in enumerate(results, 1):
+    # print(results)
+    
+    for idx, (score, case) in enumerate(results, 1):                   
         product_name = case.get('product_name', 'N/A')
         ref_id = case.get('reference_id', 'N/A')
         hs_code = case.get('hs_code', 'N/A')
         decision_date = case.get('decision_date', 'N/A')
-
+        
         # 품목명이 너무 길면 자르기 (Expander 제목용)
         product_name_display = product_name[:60] + "..." if len(product_name) > 60 else product_name
         # 제목에도 하이라이트 적용
@@ -616,6 +630,7 @@ def format_domestic_case_list(results, query):
 <span class="arrow">▶</span>
 <span class="rank">{idx}위</span>
 <span class="ref-id">{ref_id}</span>
+<span class="weight-val">점수 : {score}</span>
 <span class="hs-code">HS {hs_code}</span>
 <span class="product-name">{product_name_display}</span>
 <span class="date">{decision_date}</span>

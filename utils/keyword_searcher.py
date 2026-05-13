@@ -44,6 +44,7 @@ class KeywordCaseSearcher:
     def search_domestic_by_keyword(
         self,
         keyword: str,
+        dict_word: dict,
         top_k: int = 10,
         ignore_spaces: bool = False,
         min_tokens: int = 1
@@ -73,50 +74,103 @@ class KeywordCaseSearcher:
         ]
 
         # 1. 토큰화
+        
+        #2026.05.13 추가 
+        # 토큰화 된 단어와 용어사전에 있는단어를 매칭
+        
         tokens = self._tokenize_query(keyword)
+        
         if not tokens:
             return []
-
+                
+        
         tokens_lower = [t.lower() for t in tokens]
 
         # 결과를 점수와 함께 저장
         scored_results = []
-
+        
+        """
+        토큰 검색 구조
+        1. 기존 단어를 토큰화
+        2. 토큰도 없고 사전단어도 없으면 그냥 리턴
+        2-1. 토큰은 없고 사전단어가 있으면 그걸 그대로 토큰으로 사용
+        2-1. 토큰이 없는데 용어사전 내 단어와 있다면 추가로 매칭
+        3. 토큰화된 단어와 용어사전 내 단어와 매칭
+        4. 매칭된 단어가 있으면 vaild_token에 넣고 기존 토큰으로 대체        
+        """
+        # if not tokens and not dict_word:
+        #     return []
+        # elif not tokens and dict_word:
+        #     tokens = dict_word
+        # elif dict_word:
+        #     valid_token = [
+        #         token for token in tokens
+        #         if token in dict_word                
+        #     ]
+        #     if valid_token:
+        #        token = valid_token
+        # tokens_lower = [t.lower() for t in tokens]
+        """
+        기존 -> '품목명 설명 분류근거'를 한 문장으로 엮어 토큰단어 존재여부 판단
+        신규 -> ‘품목명’, ‘품목설명’, ‘분류근거’ 항목을 각각 분리하여 토큰 단어의 포함 여부를 판단하며,
+                항목별로 서로 다른 가중치를 적용하여 점수를 산정
+                 - 제품명에 토큰단어 있을 시 : 5점
+                 - 품목설명에 토큰단어 있을 시 : 3점
+                 - 분류근거에 토큰단어 있을 시 : 2점
+        """
+        # 결과를 점수와 함께 저장
+        # scored_results = []        
         for source in domestic_sources:
             if source in self.data_manager.data:
                 for item in self.data_manager.data[source]:
                     # 품목명, 설명, 분류근거에서 검색
-                    searchable_text = ' '.join([
-                        str(item.get('product_name', '')),
-                        str(item.get('description', '')),
-                        str(item.get('decision_reason', ''))
-                    ]).lower()
-
-                    # 띄어쓰기 무시 옵션
-                    if ignore_spaces:
-                        searchable_text_no_space = searchable_text.replace(' ', '')
-
-                    # 가중치 계산: 매칭된 토큰 개수 카운트
+                    searchable_texts = {
+                        'product_name' : str(item.get('product_name', '')).lower(),
+                        'description' : str(item.get('description', '')).lower(),
+                        'decision_reason' : str(item.get('decision_reason', '')).lower()
+                    }
                     matched_tokens = 0
-                    for token in tokens_lower:
-                        if ignore_spaces:
-                            token_no_space = token.replace(' ', '')
-                            if token_no_space in searchable_text_no_space:
-                                matched_tokens += 1
-                        else:
-                            if token in searchable_text:
-                                matched_tokens += 1
-
+                    
+                    for weight,searchable_text in searchable_texts.items():
+                        weight_val = 0
+                        
+                        if weight == 'product_name': 
+                            weight_val = 5                        
+                        elif weight == 'description': 
+                            weight_val = 3                        
+                        elif weight == 'decision_reason': 
+                            weight_val = 2                        
+                                                    
+                        # print(weight,weight_val)
+                        
+                        # 띄어쓰기 무시 옵션
+                        if ignore_spaces :
+                            searchable_text_no_space = searchable_text.replace(' ', '')
+                            
+                        # 가중치 계산: 매칭된 토큰 개수 카운트                        
+                        for token in tokens_lower:
+                            if ignore_spaces:
+                                token_no_space = token.replace(' ', '')
+                                if token_no_space in searchable_text_no_space:
+                                    matched_tokens += weight_val
+                            else:
+                                if token in searchable_text:
+                                    matched_tokens += weight_val
+                                    
+                    print(matched_tokens)
+                    
                     # OR 검색: 최소 토큰 수 이상 매칭되면 포함
                     if matched_tokens >= min_tokens:
                         scored_results.append((matched_tokens, item))
-
+                                
+        
         # 점수 기준 내림차순 정렬
         scored_results.sort(key=lambda x: x[0], reverse=True)
-
+                
         # 상위 top_k개만 반환 (점수는 제외)
-        return [item for score, item in scored_results[:top_k]]
-
+        # return [item for score, item in scored_results[:top_k]]
+        return scored_results[:top_k]
+    
     def find_domestic_case_by_id(self, ref_id: str) -> Dict[str, Any]:
         """
         참고문서번호로 국내 분류사례 검색
