@@ -44,7 +44,7 @@ class KeywordCaseSearcher:
     def search_domestic_by_keyword(
         self,
         keyword: str,
-        dict_word: dict,
+        dict_word: list,
         top_k: int = 10,
         ignore_spaces: bool = False,
         min_tokens: int = 1
@@ -78,38 +78,52 @@ class KeywordCaseSearcher:
         #2026.05.13 추가 
         # 토큰화 된 단어와 용어사전에 있는단어를 매칭
         
-        tokens = self._tokenize_query(keyword)
+        # tokens = self._tokenize_query(keyword)
         
-        if not tokens:
-            return []
+        # if not tokens:
+        #     return []
                 
         
-        tokens_lower = [t.lower() for t in tokens]
+        # tokens_lower = [t.lower() for t in tokens]
 
-        # 결과를 점수와 함께 저장
-        scored_results = []
+        # # 결과를 점수와 함께 저장
+        # scored_results = []
         
         """
-        토큰 검색 구조
+        05.14
+        토큰 검색 구조 수정
         1. 기존 단어를 토큰화
-        2. 토큰도 없고 사전단어도 없으면 그냥 리턴
-        2-1. 토큰은 없고 사전단어가 있으면 그걸 그대로 토큰으로 사용
-        2-1. 토큰이 없는데 용어사전 내 단어와 있다면 추가로 매칭
+        2. 토큰도 없고 expansion_query도 없으면 그냥 리턴
+        2-1. 질문이 "expansion_query" 이고 dict_word 만 있다면 -> expansion_query 사용        
         3. 토큰화된 단어와 용어사전 내 단어와 매칭
-        4. 매칭된 단어가 있으면 vaild_token에 넣고 기존 토큰으로 대체        
+        4. 매칭된 단어가 있으면 vaild_token에 넣고 기존 토큰으로 대체(없으면 토큰 단어 그대로 사용)
         """
-        # if not tokens and not dict_word:
-        #     return []
-        # elif not tokens and dict_word:
-        #     tokens = dict_word
-        # elif dict_word:
-        #     valid_token = [
-        #         token for token in tokens
-        #         if token in dict_word                
-        #     ]
-        #     if valid_token:
-        #        token = valid_token
+        tokens=[]
+        tokens_lower=[]
+        # 확장쿼리 값을 쓰지 않는다면
+        if keyword != "expansion_query":
+            tokens = self._tokenize_query(keyword)
+            if dict_word:
+                valid_token = [
+                    token for token in tokens
+                    if token in dict_word                
+                ]
+                if valid_token:
+                   tokens = valid_token
+            tokens_lower = [t.lower() for t in tokens]           
+        # 확장 쿼리 값을 쓴다면
+        elif keyword == "expansion_query" and dict_word:            
+            tokens_lower = dict_word
+            
+        # 아니면            
+        elif not tokens and not dict_word:
+            return []
+        print(keyword,tokens_lower)
+        
         # tokens_lower = [t.lower() for t in tokens]
+        
+        # 결과를 점수와 함께 저장
+        scored_results = []        
         """
         기존 -> '품목명 설명 분류근거'를 한 문장으로 엮어 토큰단어 존재여부 판단
         신규 -> ‘품목명’, ‘품목설명’, ‘분류근거’ 항목을 각각 분리하여 토큰 단어의 포함 여부를 판단하며,
@@ -129,8 +143,7 @@ class KeywordCaseSearcher:
                         'description' : str(item.get('description', '')).lower(),
                         'decision_reason' : str(item.get('decision_reason', '')).lower()
                     }
-                    matched_tokens = 0
-                    
+                    matched_tokens = 0                    
                     for weight,searchable_text in searchable_texts.items():
                         weight_val = 0
                         
@@ -139,25 +152,23 @@ class KeywordCaseSearcher:
                         elif weight == 'description': 
                             weight_val = 3                        
                         elif weight == 'decision_reason': 
-                            weight_val = 2                        
-                                                    
-                        # print(weight,weight_val)
+                            weight_val = 2                                                                        
                         
                         # 띄어쓰기 무시 옵션
                         if ignore_spaces :
-                            searchable_text_no_space = searchable_text.replace(' ', '')
-                            
+                            searchable_text_no_space = searchable_text.replace(' ', '')                        
                         # 가중치 계산: 매칭된 토큰 개수 카운트                        
-                        for token in tokens_lower:
+                        for token in tokens_lower:  
+                            # if keyword == "expansion_query" : print(token)                                                  
                             if ignore_spaces:
                                 token_no_space = token.replace(' ', '')
                                 if token_no_space in searchable_text_no_space:
-                                    matched_tokens += weight_val
-                            else:
+                                    matched_tokens += weight_val                                
+                            else:                                
                                 if token in searchable_text:
                                     matched_tokens += weight_val
-                                    
-                    print(matched_tokens)
+                                
+                    
                     
                     # OR 검색: 최소 토큰 수 이상 매칭되면 포함
                     if matched_tokens >= min_tokens:
@@ -166,7 +177,7 @@ class KeywordCaseSearcher:
         
         # 점수 기준 내림차순 정렬
         scored_results.sort(key=lambda x: x[0], reverse=True)
-                
+        print("scored_results")        
         # 상위 top_k개만 반환 (점수는 제외)
         # return [item for score, item in scored_results[:top_k]]
         return scored_results[:top_k]

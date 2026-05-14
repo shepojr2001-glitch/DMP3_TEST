@@ -510,9 +510,9 @@ def handle_hs_manual_with_user_codes(user_input, context, hs_manager, logger, ex
     return final_answer
 
 
-def handle_domestic_case_lookup(user_input, hs_manager):
+def handle_domestic_case_lookup(user_input, hs_manager, client):
     """국내 분류사례 원문 검색 처리 함수"""
-
+    expansion_query = []
     # 1. 참고문서번호 직접 검색
     ref_pattern = r'품목분류\d+과-\d+'
     match = re.search(ref_pattern, user_input)
@@ -529,23 +529,31 @@ def handle_domestic_case_lookup(user_input, hs_manager):
         else:
             return f"⚠️ 참고문서번호 '{ref_id}'에 해당하는 사례를 찾을 수 없습니다.\n\n다른 문서번호나 키워드로 다시 검색해주세요."
 
-    # expander = QueryExpander(client, 'balanced')
-    # expansion_result = expander.expand_query(user_input)
-    dict_word=[]
-    print(dict_word)
-    # 1. 단순 키워드 검색으로 한다. 여기서 있으면 그냥 리턴
-    results = hs_manager.search_domestic_by_keyword(user_input,dict_word=dict_word, top_k=10)
+    expander = QueryExpander(client, 'balanced')
+    expansion_result = expander.expand_query(user_input)
+    dict_word = expansion_result['expanded_query'].split(' ')
     
-        # 2. 키워드 기반 단순 문자열 검색
-        # results = hs_manager.search_domestic_by_keyword(user_input, expansion_result["all_keywords"], top_k=10)
+    # 1. 단순 키워드 검색으로 한다. 여기서 있으면 그냥 리턴
+    results = hs_manager.search_domestic_by_keyword(user_input, dict_word=dict_word, top_k=10)
+    
+        
 
     if not results:
-        return f"""⚠️ **"{user_input}"에 대한 검색 결과가 없습니다**
+        expansion_query=dict_word
+        # 2. 키워드 기반 단순 문자열 검색
+        """
+        질문 토큰화 단어로도 나오지 않는다면, 쿼리 확장으로 된 단어를 기반으로 한번 더 검색을 수행한다.        
+        
+        """            
+        results += hs_manager.search_domestic_by_keyword("expansion_query", dict_word, top_k=10)
+        if not results:
+            return f"""⚠️ **"{user_input}"에 대한 검색 결과가 없습니다**
 
 
 **가능한 원인:**
 - 해당 키워드가 포함된 분류사례가 데이터에 없습니다
 - 검색어가 원문에 정확히 일치하지 않습니다
+- 확장 쿼리를 통해 검색하여도 결과가 나오지 않았습니다
 
 **검색 팁:**
 - 품목명의 핵심 키워드 사용 (예: '섬유유연제', '폴리아미드')
@@ -557,7 +565,7 @@ def handle_domestic_case_lookup(user_input, hs_manager):
 - **국내 분류사례 기반 HS 추천**: AI가 유사 사례를 분석하여 HS코드 추천 (TF-IDF 사용)
 - **웹 검색**: 최신 정보 및 일반 품목 정보 검색"""
 
-    return format_domestic_case_list(results, query=user_input)
+    return format_domestic_case_list(results, query=user_input, expansion_query=expansion_query)
 
 
 def format_domestic_case_detail(case, query=None):
@@ -605,13 +613,24 @@ def format_domestic_case_detail(case, query=None):
     2026.05.13 추가
      - SCORE (가중치 점수) 추가
      - SCORE, 결정일자 순으로 정렬함.
+     - 환장하겠네 ㅅㅂ
+    2026.05.14 추가
+     - 
 """
 
-def format_domestic_case_list(results, query):
+def format_domestic_case_list(results, query, expansion_query):
     """국내 사례 목록 포맷 (Expander 방식)"""
-    output = f"## 🔍 \"{query}\" 검색 결과 ({len(results)}건)\n\n"
+    output = ""
+    if expansion_query : 
+        output += f"## 🔍 \"{query}\" 확장쿼리 검색 결과 ({len(results)}건)\n"            
+        output += f"#### 🔍 검색에 사용한 확장쿼리 : \"{','.join(expansion_query)}\" \n\n"            
+    else : 
+        output += f"## 🔍 \"{query}\" 검색 결과 ({len(results)}건)\n\n"
     # print(results)
     
+    if expansion_query : 
+       query = ' '.join(expansion_query) 
+            
     for idx, (score, case) in enumerate(results, 1):                   
         product_name = case.get('product_name', 'N/A')
         ref_id = case.get('reference_id', 'N/A')
