@@ -303,7 +303,6 @@ if "chat_archive" not in st.session_state:
 if "selected_archive" not in st.session_state:
     st.session_state.selected_archive = None
 
-
 class RealTimeProcessLogger:
     def __init__(self, container):
         self.container = container
@@ -342,11 +341,17 @@ class RealTimeProcessLogger:
         self.log_placeholder.empty()
 
 # 2026.05.12 수정 - 로그인 기능 구현을 위해 API 키 검증 함수 추가
+# 2026.05.15 추가 
+# 1. 이전에 작성한 키와 로그인하려는 키와 같으면 리턴
+# 2. 기존 세션 내 클라이언트 사용
 def check_api_key(key):    
+    if st.session_state.api_key == key : 
+        return True;
+    
     try:        
         # API 키 검증용: 실제 호출 또는 모델 목록 조회
         # print("1")
-        client= genai.Client(api_key=key)
+        client= st.session_state.client
         # print("2")
         client.models.list()  # 모델 목록 조회로 키 유효성 확인
         # print("3") 
@@ -477,11 +482,13 @@ def setLoginPage():
         if not user_id or not pw_api_key:
             st.warning("ID와 PW를 입력해주세요.")
         else:
+            if st.session_state.client == None :
+                st.session_state.client = genai.Client(api_key=pw_api_key)
             if check_api_key(pw_api_key):
                 st.session_state.login = True
                 st.session_state.user_id = user_id
-                st.session_state.api_key = pw_api_key
-                st.session_state.client = genai.Client(api_key=pw_api_key)
+                if st.session_state.api_key == "":
+                    st.session_state.api_key = pw_api_key                
                 #print(pw_api_key)
                 st.rerun()
             else:
@@ -501,8 +508,7 @@ def setSideBar():
             # 로그아웃 버튼                       
             if st.button("로그아웃", type="primary", use_container_width=True):
                 st.session_state.login = False
-                st.session_state.user_id = ""
-                st.session_state.api_key = ""
+                st.session_state.user_id = ""                
                 st.session_state.client = None
                 st.session_state.chat_history = []  # 채팅 기록 초기화                
                 st.session_state.chat_archive = []  # 채팅 아카이브 초기화  
