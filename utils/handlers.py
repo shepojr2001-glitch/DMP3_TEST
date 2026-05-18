@@ -630,12 +630,28 @@ def format_domestic_case_list(results, query, expansion_query):
     기존 양식에서 확장쿼리값이 있는지 여부에 따라 방식을 바꾼다
     1. 단순 검색결과가 있다면 : 질문을 토큰화 하고 검색 결과에서 강조
     2. 쿼리 확장값으로 찾았다면(expansion_query) : 쿼리 확장값에서 검색결과를 강조
-    
+    2.1 한국단어 : korean_words
+    2.1 영어 : english_words
     """
+
     output = ""
     if expansion_query : 
+        korean_word=[]
+        english_word=[]
+        for word in expansion_query:
+            if re.search(r'[가-힣]', word):
+                korean_word.append(word)
+
+        # 영어 포함 여부
+            elif re.search(r'[a-zA-Z]', word):
+                english_word.append(word)
+        
+        print(korean_word)
+        print(english_word)
+        
         output += f"## 🔍 \"{query}\" 쿼리 확장 검색 결과 ({len(results)}건)\n"            
-        output += f"#### 🔍 검색에 사용한 쿼리 확장 단어 : \"{','.join(expansion_query)}\" \n\n"            
+        output += f"#### 🔍 검색에 사용한 쿼리 확장 한글 단어 : \"{','.join(korean_word)}\" \n\n"            
+        output += f"#### 🔍 검색에 사용한 쿼리 확장 영문 단어 : \"{','.join(english_word)}\" \n\n"         
     else : 
         output += f"## 🔍 \"{query}\" 검색 결과 ({len(results)}건)\n\n"
     # print(results)
@@ -707,20 +723,24 @@ def handle_overseas_case_lookup(user_input, hs_manager, client):
         results = hs_manager.search_overseas_by_hs_code(hs_code, top_k=10)
         if results:
             return format_overseas_case_list_by_hs(results, hs_code)
-    print('QueryExpander 실행..')
+        
+    
+    time.sleep(3)
     expander = QueryExpander(client, 'balanced')
     expansion_result = expander.expand_query(user_input)
     dict_word = expansion_result['expanded_query'].split(' ')
     print(dict_word)
-    print('QueryExpander 실행완료')
-    
+    time.sleep(3)
     
     # 3. 단순 키워드 기반 단순 문자열 검색
     results = hs_manager.search_overseas_by_keyword(user_input, dict_word = dict_word, top_k=10)
 
     if not results:
+        expansion_query=dict_word
+        
         # 4. 키워드 기반 확장쿼리 문자열 검색
         results += hs_manager.search_overseas_by_keyword("expansion_query", dict_word, top_k=10)
+        # user_input = dict_word
         if not results:
             return f"""⚠️ **"{user_input}"에 대한 검색 결과가 없습니다**
 
@@ -743,14 +763,14 @@ def handle_overseas_case_lookup(user_input, hs_manager, client):
     us_results = []
     eu_results = []
 
-    for item in results:
+    for (score,item) in results:
         # 원본 데이터에서 국가 판단
         if 'hs_classification_data_us' in str(item) or item.get('organization', '').startswith('New York'):
-            us_results.append(item)
+            us_results.append((score,item))
         else:
-            eu_results.append(item)
+            eu_results.append((score,item))
 
-    return format_overseas_case_list(us_results, eu_results, query=user_input)
+    return format_overseas_case_list(us_results, eu_results, query=user_input, expansion_query = expansion_query)
 
 
 def format_overseas_case_detail(case, country, query=None):
@@ -844,21 +864,29 @@ def format_overseas_case_list_by_hs(results, hs_code):
     return output
 
 
-def format_overseas_case_list(us_results, eu_results, query):
+def format_overseas_case_list(us_results, eu_results, query, expansion_query):
     """키워드 기반 해외 사례 목록 포맷 (국가별 구분, Expander 방식)"""
+    output = ""
     total_count = len(us_results) + len(eu_results)
-    output = f"## 🔍 \"{query}\" 검색 결과 ({total_count}건)\n\n"
+    if expansion_query : 
+        output += f"## 🔍 \"{query}\" 쿼리 확장 검색 결과 ({total_count}건)\n"            
+        output += f"#### 🔍 검색에 사용한 쿼리 확장 단어 : \"{','.join(expansion_query)}\" \n\n"   
+    else :
+        output = f"## 🔍 \"{query}\" 검색 결과 ({total_count}건)\n\n"
 
+    if expansion_query : 
+        query = ' '.join(expansion_query)
+        
     if us_results:
         output += f"### 🇺🇸 미국 ({len(us_results)}건)\n\n"
-        for idx, case in enumerate(us_results, 1):
+        for idx, (score, case) in enumerate(us_results, 1):
             reply = case.get('reply', 'N/A')
             reply_short = reply[:60] + "..." if len(reply) > 60 else reply
             # 요약에도 하이라이트 적용
             reply_short = highlight_keywords(reply_short, query)
-
             ref_id = case.get('reference_id', 'N/A')
             hs_code = case.get('hs_code', 'N/A')
+  
 
             # 카드형 Expander
             output += f"""<div class="case-card us">
@@ -867,6 +895,7 @@ def format_overseas_case_list(us_results, eu_results, query):
 <span class="arrow">▶</span>
 <span class="rank">{idx}위</span>
 <span class="ref-id">{ref_id}</span>
+<span class="weight-val">점수 : {score}</span>
 <span class="hs-code">HS {hs_code}</span>
 <span class="reply-preview">{reply_short}</span>
 </summary>
@@ -885,11 +914,11 @@ def format_overseas_case_list(us_results, eu_results, query):
 
     if eu_results:
         output += f"\n---\n\n### 🇪🇺 EU ({len(eu_results)}건)\n\n"
-        for idx, case in enumerate(eu_results, 1):
-            reply = case.get('reply', 'N/A')
-            reply_short = reply[:60] + "..." if len(reply) > 60 else reply
+        for idx, (score,case) in enumerate(eu_results, 1):
+            description = case.get('description', 'N/A')
+            description_short = description[:60] + "..." if len(description) > 60 else description
             # 요약에도 하이라이트 적용
-            reply_short = highlight_keywords(reply_short, query)
+            description_short = highlight_keywords(description_short, query)
 
             ref_id = case.get('reference_id', 'N/A')
             hs_code = case.get('hs_code', 'N/A')
@@ -901,8 +930,9 @@ def format_overseas_case_list(us_results, eu_results, query):
 <span class="arrow">▶</span>
 <span class="rank">{idx}위</span>
 <span class="ref-id">{ref_id}</span>
+<span class="weight-val">점수 : {score}</span>
 <span class="hs-code">HS {hs_code}</span>
-<span class="reply-preview">{reply_short}</span>
+<span class="reply-preview">{description_short}</span>
 </summary>
 
 <div class="case-content">
