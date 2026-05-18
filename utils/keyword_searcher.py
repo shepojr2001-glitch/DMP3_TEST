@@ -208,6 +208,7 @@ class KeywordCaseSearcher:
     def search_overseas_by_keyword(
         self,
         keyword: str,
+        dict_word: list,
         top_k: int = 10,
         ignore_spaces: bool = False,
         min_tokens: int = 1
@@ -230,40 +231,74 @@ class KeywordCaseSearcher:
         Returns:
             검색 결과 리스트 (가중치 순으로 정렬)
         """
+        '''기존 코드
         # 1. 토큰화
         tokens = self._tokenize_query(keyword)
         if not tokens:
             return []
-
         tokens_lower = [t.lower() for t in tokens]
-
         # 결과를 점수와 함께 저장
         scored_results = []
-
+        '''
+        tokens=[]
+        tokens_lower=[]
+        scored_results = []
+        # 일반 키워드 검색(검색어 -> 토큰 저장)
+        if keyword != "expansion_query":
+            tokens = self._tokenize_query(keyword)
+            if dict_word:
+                valid_token = [
+                    token for token in tokens
+                    if token in dict_word                
+                ]
+                if valid_token:
+                   tokens = valid_token
+            tokens_lower = [t.lower() for t in tokens]
+        # 확장 쿼리
+        elif keyword == "expansion_query" and dict_word:            
+            tokens_lower = [word.lower() for word in dict_word]
+        elif not tokens and not dict_word:
+            return []
+        print(keyword,tokens_lower)
         for source in ['hs_classification_data_us', 'hs_classification_data_eu']:
             if source in self.data_manager.data:
                 for item in self.data_manager.data[source]:
-                    # 품목명, 설명, reply에서 검색
-                    searchable_text = ' '.join([
-                        str(item.get('product_name', '')),
-                        str(item.get('description', '')),
-                        str(item.get('reply', ''))
-                    ]).lower()
+                    """
+                    기존 -> '품목명 설명 분류근거'를 한 문장으로 엮어 토큰단어 존재여부 판단
+                    신규 -> ‘품목명’, ‘품목설명’, ‘분류근거’ 항목을 각각 분리하여 토큰 단어의 포함 여부를 판단하며,
+                    항목별로 서로 다른 가중치를 적용하여 점수를 산정
+                    - reply, keyword 에 토큰단어 있을 시 : 5점
+                    - description 에 토큰단어 있을 시 : 1점
+                    """
+                    # keywords, 설명, reply에서 검색
+                    searchable_texts = {
+                        'reply' : str(item.get('reply', '')).lower(),
+                        'description' : str(item.get('description', '')).lower(),
+                        'keyword' : str(item.get('keyword', '')).lower()
+                    }
 
-                    # 띄어쓰기 무시 옵션
-                    if ignore_spaces:
-                        searchable_text_no_space = searchable_text.replace(' ', '')
-
-                    # 가중치 계산: 매칭된 토큰 개수 카운트
-                    matched_tokens = 0
-                    for token in tokens_lower:
+                    # 가중치 계산
+                    matched_tokens = 0                    
+                    for weight,searchable_text in searchable_texts.items():
+                        weight_val = 0
+                        
+                        if weight == 'reply': 
+                            weight_val = 5                        
+                        elif weight == 'description': 
+                            weight_val = 1                        
+                        elif weight == 'keyword': 
+                            weight_val = 5  
+                        # 띄어쓰기 무시 옵션
                         if ignore_spaces:
-                            token_no_space = token.replace(' ', '')
-                            if token_no_space in searchable_text_no_space:
-                                matched_tokens += 1
-                        else:
-                            if token in searchable_text:
-                                matched_tokens += 1
+                            searchable_text_no_space = searchable_texts.replace(' ', '')
+                        for token in tokens_lower:
+                            if ignore_spaces:
+                                token_no_space = token.replace(' ', '')
+                                if token_no_space in searchable_text_no_space:
+                                    matched_tokens += weight_val
+                            else:
+                                if token in searchable_text:
+                                    matched_tokens += weight_val
 
                     # OR 검색: 최소 토큰 수 이상 매칭되면 포함
                     if matched_tokens >= min_tokens:
