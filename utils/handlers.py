@@ -622,8 +622,8 @@ def format_domestic_case_list(results, query, expansion_query):
     """국내 사례 목록 포맷 (Expander 방식)"""
     output = ""
     if expansion_query : 
-        output += f"## 🔍 \"{query}\" 확장쿼리 검색 결과 ({len(results)}건)\n"            
-        output += f"#### 🔍 검색에 사용한 확장쿼리 : \"{','.join(expansion_query)}\" \n\n"            
+        output += f"## 🔍 \"{query}\" 쿼리 확장 검색 결과 ({len(results)}건)\n"            
+        output += f"####  검색에 사용한 쿼리 확장 : \"{','.join(expansion_query)}\" \n\n"            
     else : 
         output += f"## 🔍 \"{query}\" 검색 결과 ({len(results)}건)\n\n"
     # print(results)
