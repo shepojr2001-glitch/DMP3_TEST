@@ -257,9 +257,11 @@ class KeywordCaseSearcher:
         # 확장 쿼리
         elif keyword == "expansion_query" and dict_word:            
             tokens_lower = [word.lower() for word in dict_word]
+            
         elif not tokens and not dict_word:
             return []
         print(keyword,tokens_lower)
+            
         for source in ['hs_classification_data_us', 'hs_classification_data_eu']:
             if source in self.data_manager.data:
                 for item in self.data_manager.data[source]:
@@ -278,7 +280,7 @@ class KeywordCaseSearcher:
                     }
 
                     # 가중치 계산
-                    matched_tokens = 0                    
+                    matched_tokens = 0
                     for weight,searchable_text in searchable_texts.items():
                         weight_val = 0
                         
@@ -308,7 +310,7 @@ class KeywordCaseSearcher:
         scored_results.sort(key=lambda x: x[0], reverse=True)
 
         # 상위 top_k개만 반환 (점수는 제외)
-        return [item for score, item in scored_results[:top_k]]
+        return scored_results[:top_k]
 
     def find_overseas_case_by_id(self, ref_id: str) -> Dict[str, Any]:
         """
