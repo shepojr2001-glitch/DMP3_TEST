@@ -647,8 +647,9 @@ def format_domestic_case_list(results, query, expansion_query):
                 english_word.append(word)
         
         output += f"## 🔍 \"{query}\" 쿼리 확장 검색 결과 ({len(results)}건)\n"            
-        output += f"####  검색에 사용한 쿼리 확장 한글 단어 : {' '.join([f'<span style="background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:99px;padding:3px 10px;font-size:20px;margin:2px">{w}</span>' for w in korean_word])} \n\n"            
-        output += f"####  검색에 사용한 쿼리 확장 영문 단어 : {' '.join([f'<span style="background:#EAF3DE;color:#3B6D11;border:1px solid #C0DD97;border-radius:99px;padding:3px 10px;font-size:20px;margin:2px">{w}</span>' for w in english_word])} \n\n" 
+        output += f"<div class='query-label' style='font:bold;'>🏷️ &nbsp;검색에 사용한 확장 쿼리</div>\n\n" 
+        output += f"{' '.join([f'<span style="background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:99px;padding:2px 10px;font-size:18px;margin:2px">{w}</span>' for w in korean_word])}"            
+        output += f"{' '.join([f'<span style="background:#EAF3DE;color:#3B6D11;border:1px solid #C0DD97;border-radius:99px;padding:2px 10px;font-size:18px;margin:2px">{w}</span>' for w in english_word])} \n\n" 
         output += "--- \n" 
         output += f'<span style="width:8px;height:8px;border-radius:50%;background:#378ADD;display:inline-block;margin-right:6px"></span>' f'&nbsp;&nbsp;' f'<span style="font-size:15px;"> 한국어 키워드 ({len(korean_word)}건)</span>' f'&nbsp;&nbsp;&nbsp;' f'<span style="width:8px;height:8px;border-radius:50%;background:#639922;display:inline-block;margin-right:6px"></span>'  f'&nbsp;&nbsp;' f'<span style="font-size:15px;"> 영어 키워드 ({len(english_word)}건)</span><br><br>'      
     else : 
