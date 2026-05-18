@@ -537,13 +537,14 @@ def handle_domestic_case_lookup(user_input, hs_manager, client):
     time.sleep(3)
     dict_word = expansion_result['expanded_query'].split(' ')
     
-    # 1. 단순 키워드 검색으로 한다. 여기서 있으면 그냥 리턴
+    # 2. 단순 키워드 검색으로 한다. 여기서 있으면 그냥 리턴
     results = hs_manager.search_domestic_by_keyword(user_input, dict_word=dict_word, top_k=10)
     
         
 
     if not results: 
         expansion_query=dict_word
+        # 2. 키워드 기반 단순 문자열 검색
         """
         2. 키워드 기반 단순 문자열 검색
         질문 토큰화 단어로도 나오지 않는다면, 확장쿼리로 생성 된 단어로 한번 더 검색을 수행한다.        
@@ -618,7 +619,6 @@ def format_domestic_case_detail(case, query=None):
     2026.05.13 추가
      - SCORE (가중치 점수) 추가
      - SCORE, 결정일자 순으로 정렬함.
-     - 환장하겠네 ㅅㅂ
     2026.05.14 추가
      - 
 """
@@ -683,9 +683,9 @@ def format_domestic_case_list(results, query, expansion_query):
     return output
 
 
-def handle_overseas_case_lookup(user_input, hs_manager):
+def handle_overseas_case_lookup(user_input, hs_manager, client):
     """해외 분류사례 원문 검색 처리 함수"""
-
+    expansion_query = []
     # 1. 참고문서번호 검색 (미국/EU 패턴)
     us_pattern = r'(NY|HQ|LA|SF|N)\s+[A-Z]?\d+'
     match = re.search(us_pattern, user_input, re.IGNORECASE)
@@ -707,12 +707,22 @@ def handle_overseas_case_lookup(user_input, hs_manager):
         results = hs_manager.search_overseas_by_hs_code(hs_code, top_k=10)
         if results:
             return format_overseas_case_list_by_hs(results, hs_code)
-
-    # 3. 키워드 기반 단순 문자열 검색
-    results = hs_manager.search_overseas_by_keyword(user_input, top_k=10)
+    print('QueryExpander 실행..')
+    expander = QueryExpander(client, 'balanced')
+    expansion_result = expander.expand_query(user_input)
+    dict_word = expansion_result['expanded_query'].split(' ')
+    print(dict_word)
+    print('QueryExpander 실행완료')
+    
+    
+    # 3. 단순 키워드 기반 단순 문자열 검색
+    results = hs_manager.search_overseas_by_keyword(user_input, dict_word = dict_word, top_k=10)
 
     if not results:
-        return f"""⚠️ **"{user_input}"에 대한 검색 결과가 없습니다**
+        # 4. 키워드 기반 확장쿼리 문자열 검색
+        results += hs_manager.search_overseas_by_keyword("expansion_query", dict_word, top_k=10)
+        if not results:
+            return f"""⚠️ **"{user_input}"에 대한 검색 결과가 없습니다**
 
 **가능한 원인:**
 - 해당 키워드가 포함된 분류사례가 데이터에 없습니다

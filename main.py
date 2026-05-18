@@ -409,7 +409,7 @@ def process_query_with_real_logging(user_input, client):
         elif q_type == "overseas_case_lookup":
             logger.log_actual("SEARCH", "Overseas case lookup starting...")
             lookup_start = time.time()
-            answer = "\n\n +++ 해외 분류사례 원문 검색 +++\n\n" + handle_overseas_case_lookup(user_input, hs_manager)
+            answer = "\n\n +++ 해외 분류사례 원문 검색 +++\n\n" + handle_overseas_case_lookup(user_input, hs_manager, client)
             lookup_time = time.time() - lookup_start
             logger.log_actual("SUCCESS", "Overseas case lookup completed", f"{lookup_time:.2f}s, {len(answer)} chars")
             
