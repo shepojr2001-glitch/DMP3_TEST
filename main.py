@@ -474,30 +474,30 @@ def setLoginPage():
         page_icon="📊",  # 브라우저 탭 아이콘
         layout="wide"  # 페이지 레이아웃을 넓게 설정
     )
-    st.title("HS 품목분류 챗봇 시스템 로그인")
-    setSideBar()
-    
-    with st.form('loginform'):
-        user_id = st.text_input("ID")
-        pw_api_key = st.text_input("PW", type="password")  
-        login_button = st.form_submit_button("로그인")  
-        if login_button:
-            if not user_id or not pw_api_key:
-                st.warning("ID와 PW를 입력해주세요.")
-            else:
-                if st.session_state.api_key != pw_api_key:
-                   print("첫 로그인이면 그대로")
-                   st.session_state.client = genai.Client(api_key=pw_api_key)
-                if check_api_key(pw_api_key):                    
-                    st.session_state.login = True
-                    st.session_state.user_id = user_id
-                    if st.session_state.api_key == "":
-                        st.session_state.api_key = pw_api_key                
-                    #print(pw_api_key)
-                    st.rerun()
+    col1, col2, col3 = st.columns([1 ,1 ,1])
+    with col2:
+        st.markdown("<h1 style='text-align: center;'>📊 HS 품목분류 전문 AI</h1>", unsafe_allow_html=True)
+        setSideBar()
+        
+        with st.form('loginform'):
+            user_id = st.text_input("ID")
+            pw_api_key = st.text_input("PW", type="password")  
+            login_button = st.form_submit_button("로그인", use_container_width=True)  
+            if login_button:
+                if not user_id or not pw_api_key:
+                    st.warning("ID와 PW를 입력해주세요.")
                 else:
-                    st.toast("유효하지 않은 값입니다.", icon="❌")
-                    st.error("유효하지 않은 키를 입력하셨습니다.")
+                    if st.session_state.api_key != pw_api_key:
+                        st.session_state.client = genai.Client(api_key=pw_api_key)
+                    if check_api_key(pw_api_key):                    
+                        st.session_state.login = True
+                        st.session_state.user_id = user_id
+                        if st.session_state.api_key == "":
+                            st.session_state.api_key = pw_api_key                
+                        st.rerun()
+                    else:
+                        st.toast("유효하지 않은 값입니다.", icon="❌")
+                        st.error("유효하지 않은 키를 입력하셨습니다.")
                 
 # 사이드바 설정 - 챗봇 특성 소개(중복되는 부분으로 함수로 분리)                
 def setSideBar():
@@ -617,7 +617,7 @@ def setMainPage():
     # 사이드바 설정 - 챗봇 특성 소개    
     setSideBar()
     # 메인 페이지 설정                    
-    st.title("HS 품목분류 챗봇")
+    st.title("HS 품목분류 전문 AI")
 
     # 활용 시나리오를 접을 수 있는 expander로 변경
     with st.expander("💡 슬기로운 품목분류 생활 (활용 시나리오)", expanded=True):
