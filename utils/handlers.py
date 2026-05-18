@@ -630,12 +630,28 @@ def format_domestic_case_list(results, query, expansion_query):
     기존 양식에서 확장쿼리값이 있는지 여부에 따라 방식을 바꾼다
     1. 단순 검색결과가 있다면 : 질문을 토큰화 하고 검색 결과에서 강조
     2. 쿼리 확장값으로 찾았다면(expansion_query) : 쿼리 확장값에서 검색결과를 강조
-    
+    2.1 한국단어 : korean_words
+    2.1 영어 : english_words
     """
+
     output = ""
     if expansion_query : 
+        korean_word=[]
+        english_word=[]
+        for word in expansion_query:
+            if re.search(r'[가-힣]', word):
+                korean_word.append(word)
+
+        # 영어 포함 여부
+            elif re.search(r'[a-zA-Z]', word):
+                english_word.append(word)
+        
+        print(korean_word)
+        print(english_word)
+        
         output += f"## 🔍 \"{query}\" 쿼리 확장 검색 결과 ({len(results)}건)\n"            
-        output += f"#### 🔍 검색에 사용한 쿼리 확장 단어 : \"{','.join(expansion_query)}\" \n\n"            
+        output += f"#### 🔍 검색에 사용한 쿼리 확장 한글 단어 : \"{','.join(korean_word)}\" \n\n"            
+        output += f"#### 🔍 검색에 사용한 쿼리 확장 영문 단어 : \"{','.join(english_word)}\" \n\n"         
     else : 
         output += f"## 🔍 \"{query}\" 검색 결과 ({len(results)}건)\n\n"
     # print(results)
